@@ -1,0 +1,21 @@
+# Use an official lightweight Python image as the base image.
+FROM python:3.9-slim
+
+# Set an environment variable to prevent Python from buffering stdout and stderr.
+ENV PYTHONUNBUFFERED=1
+
+# Set the working directory inside the container.
+WORKDIR /app
+
+# Copy requirements.txt into the container and install dependencies.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire backend code into the container.
+COPY . .
+
+# Expose the port that your Flask app uses.
+EXPOSE 5000
+
+# Define the command to run your app.
+CMD ["python", "app.py"]
