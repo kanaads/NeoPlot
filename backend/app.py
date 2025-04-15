@@ -3,7 +3,8 @@ import uuid
 import subprocess
 import json
 import logging
-from flask import Flask, request, jsonify, send_from_directory
+import time
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 
 # Set up logging to show debug messages in the console.
@@ -34,14 +35,12 @@ def generate():
     output_filepath = os.path.join(output_dir, filename)
     
     # Determine script extension based on the language.
-    # Determine script extension based on the language.
     ext = "py" if language.lower() == "python" else "R"
     script_filename = f'script.{ext}'
     script_path = os.path.join(output_dir, script_filename)
 
     # Build the dynamic script using relative filename so that files are written in the working directory.
     if language.lower() == 'python':
-        # Ensure we are in the current directory within the subprocess.
         script = f"import os\nos.makedirs('.', exist_ok=True)\n{code}\n"
         if library.lower() == 'matplotlib' and 'plt.savefig' not in code:
             script += f"plt.savefig(r'{filename}')\n"
@@ -104,13 +103,14 @@ def generate():
             app.logger.error("Output file not found in %s", output_dir)
             return jsonify({'error': 'Script ran, but no output file was found.'}), 500
 
-        # Save metadata for history
+        # Save metadata for history, including a creation timestamp.
         meta = {
             'filename': filename,
             'url': f'/results/{uid}/{filename}',
             'language': language,
             'library': library,
-            'type': 'html' if is_html else 'png'
+            'type': 'html' if is_html else 'png',
+            'createdAt': time.time()
         }
         meta_path = os.path.join(output_dir, 'meta.json')
         with open(meta_path, 'w') as meta_file:
@@ -129,7 +129,6 @@ def generate():
         app.logger.error("Script execution timed out.")
         return jsonify({'error': 'Script execution timed out'}), 500
 
-
 @app.route('/api/history', methods=['GET'])
 def get_history():
     history_entries = []
@@ -142,13 +141,19 @@ def get_history():
                 with open(meta_path, 'r') as f:
                     meta = json.load(f)
                 history_entries.append(meta)
+    # Sort entries so that the most recent appear first.
+    history_entries.sort(key=lambda x: x.get('createdAt', 0), reverse=True)
     app.logger.debug("Returning history: %s", history_entries)
     return jsonify(history_entries)
 
 @app.route('/results/<uid>/<filename>')
 def serve_result(uid, filename):
-    return send_from_directory(os.path.join('results', uid), filename)
+    download = request.args.get("download", "false").lower() == "true"
+    file_path = os.path.join('results', uid, filename)
+    if download:
+        return send_file(file_path, as_attachment=True, download_name=filename, mimetype='application/octet-stream')
+    else:
+        return send_from_directory(os.path.join('results', uid), filename)
 
 if __name__ == '__main__':
-    # If file watcher is interfering, consider disabling the auto-reloader:
-    app.run(debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", debug=True, use_reloader=False)

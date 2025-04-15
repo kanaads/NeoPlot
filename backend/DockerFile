@@ -1,21 +1,35 @@
-# Use an official lightweight Python image as the base image.
+# Use an official lightweight Python image as the base.
 FROM python:3.9-slim
 
-# Set an environment variable to prevent Python from buffering stdout and stderr.
+# Prevent Python from buffering output.
 ENV PYTHONUNBUFFERED=1
 
 # Set the working directory inside the container.
 WORKDIR /app
 
-# Copy requirements.txt into the container and install dependencies.
+# Install system dependencies, including R and necessary libraries.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      r-base \
+      r-base-dev \
+      build-essential \
+      libcurl4-openssl-dev \
+      libssl-dev \
+      libxml2-dev \
+      pandoc \
+  && rm -rf /var/lib/apt/lists/*
+
+# (Optional) Pre-install R packages needed by your dynamic scripts.
+RUN R -e "install.packages(c('plotly', 'ggplot2', 'htmlwidgets'), repos='http://cran.us.r-project.org')"
+
+# Copy and install Python dependencies.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire backend code into the container.
+# Copy the backend source code.
 COPY . .
 
-# Expose the port that your Flask app uses.
+# Expose the port your Flask app uses.
 EXPOSE 5000
 
-# Define the command to run your app.
+# Run your Flask application.
 CMD ["python", "app.py"]
