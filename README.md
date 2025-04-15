@@ -1,27 +1,8 @@
 # NeoPlot
 
-[GitHub Repository](https://github.com/yourusername/NeoPlot)
+[GitHub Repository](https://github.com/kanaads/NeoPlot)
 
 NeoPlot is a language-agnostic visualization web application that allows users to generate and view visualizations by executing custom scripts written in Python or R. The backend dynamically executes user-submitted scripts in an isolated environment and returns the resulting visualization, while the frontend (built with React and styled with Tailwind CSS) provides an intuitive interface for code input and persistent visualization history.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Design and Tools Used](#design-and-tools-used)
-- [Issues Encountered and Resolutions](#issues-encountered-and-resolutions)
-- [Setup and Installation](#setup-and-installation)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [Docker Deployment](#docker-deployment)
-- [Usage](#usage)
-- [Screen Recording](#screen-recording)
-- [Sample Visualizations](#sample-visualizations)
-  - [Python - Static Grouped Bar Chart (Matplotlib)](#1-python---static-grouped-bar-chart-matplotlib)
-  - [Python - Interactive 3D Scatter Plot (Plotly)](#2-python---interactive-3d-scatter-plot-plotly)
-  - [R - Static Boxplot with Jitter (ggplot2)](#3-r---static-boxplot-with-jitter-ggplot2)
-  - [R - Interactive Bubble Chart (Plotly)](#4-r---interactive-bubble-chart-plotly)
-- [Future Enhancements](#future-enhancements)
-- [License](#license)
 
 ## Overview
 
@@ -58,29 +39,37 @@ NeoPlot simplifies the process of creating and viewing visualizations by:
 - **Python:** Matplotlib, Plotly, NumPy, Pandas
 - **R:** ggplot2, Plotly, htmlwidgets
 
-## Issues Encountered and Resolutions
+## Issues Encountered and Their Resolutions
 
-1. **Module Compatibility:**  
-   - *Issue:* Incompatibility between NumPy 2.x and components built with NumPy 1.x (e.g., in Matplotlib).
-   - *Resolution:* Pin `numpy` to `<2` in `requirements.txt`.
+### 1. Module Compatibility Issue
+- **Context:** While integrating Matplotlib in the Python backend, runtime errors occurred due to incompatibility between NumPy 2.x and components built with NumPy 1.x.
+- **Solution:** The `requirements.txt` was updated to pin `numpy` to a version below 2 (e.g., `numpy<2`), ensuring compatibility with Matplotlib.
+- **Outcome:** This adjustment allowed the Matplotlib-based visualizations to execute smoothly, with the system reliably generating static plots.
 
-2. **Werkzeug Import Error:**  
-   - *Issue:* Flask expected `url_quote` from Werkzeug, which was removed in newer versions.
-   - *Resolution:* Pin Werkzeug to `<2.3` in `requirements.txt`.
+### 2. Werkzeug Import Error
+- **Context:** An import error was encountered because Flask expected the `url_quote` function from Werkzeug, which was removed in newer versions.
+- **Solution:** The `requirements.txt` was revised to pin Werkzeug to a version earlier than 2.3 (`Werkzeug<2.3`), aligning the dependency with Flask's requirements.
+- **Outcome:** The Flask backend now runs without errors, ensuring uninterrupted service and improved stability.
 
-3. **Interactive Visualization Preview:**  
-   - *Issue:* Loading interactive plots inline via iframes was resource-intensive.
-   - *Resolution:* The History page now displays a text label ("Interactive Plot") for such entries. (A future enhancement is to generate a small screenshot thumbnail.)
+### 3. Interactive Visualization Preview Performance
+- **Context:** Rendering interactive visualizations inline using iframes on the History page was resource-intensive and degraded the performance.
+- **Solution:** The History page was updated to display a simple text label ("Interactive Plot") for interactive visualizations instead of embedding the full iframe. (Plans for future enhancement include generating a thumbnail preview.)
+- **Outcome:** This change significantly improved page performance while still informing users that an interactive visualization is available.
 
-4. **Network Binding in Docker:**  
-   - *Issue:* Flask was binding to `127.0.0.1`, which didn’t allow access through Docker’s port mapping.
-   - *Resolution:* Updated the Flask app to run on host `0.0.0.0`.
+### 4. Docker Network Binding
+- **Context:** The Flask backend was initially set to bind to `127.0.0.1`, which prevented proper access through Docker’s port mapping.
+- **Solution:** The Flask server configuration was updated to bind to `0.0.0.0`, allowing it to listen on all network interfaces.
+- **Outcome:** With this update, the Dockerized backend is now accessible via the host (e.g., at `http://localhost:5000`), resolving all connectivity issues.
 
-## Setup and Installation
 
-### Frontend
+## Future Enhancements
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/NeoPlot.git
-   cd NeoPlot/frontend
+- **Enhanced Security:**  
+  Explore more granular sandboxing for code execution and implement additional resource limiting to further secure the production environment.
+
+- **Automated Thumbnail Generation:**  
+  Integrate an automated process (using tools like Puppeteer or wkhtmltoimage) to generate thumbnail previews for interactive visualizations, improving the History page performance and user experience.
+
+- **Expanded Visualization Support:**  
+  Incorporate support for additional visualization libraries and types, broadening NeoPlot’s capabilities for diverse data analysis and presentation.
+
